@@ -1,4 +1,4 @@
-# 3usb_meter.py
+# USB_meter_dashboard
 FNB58 USB Power Meter Logging Program
 
 # USB Power Meter Data Logger and Report Generator
