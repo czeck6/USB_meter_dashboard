@@ -7,11 +7,15 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 from matplotlib.patches import Rectangle
 
-
 # --- CONFIG ---
-DATA_FILE = sys.argv[1] if len(sys.argv) > 1 else "USB_Meter_Log_20250425_234827.csv"
+if len(sys.argv) > 1:
+    DATA_FILE = sys.argv[1]
+else:
+    print("Usage: python reporter.py [csv_file]")
+    sys.exit(1)
+
 OUTPUT_PDF = DATA_FILE.replace('.csv', '_report.pdf')
-AUTHOR = "Dylan"
+AUTHOR = "change_me"
 TEST_TYPE = "Discharge Test"
 
 # --- Load CSV Data ---
@@ -75,15 +79,24 @@ Average Temperature: {avg_temp:.2f} °C
 
 # --- Plot and Save ---
 with PdfPages(OUTPUT_PDF) as pdf:
-    fig = plt.figure(figsize=(11, 8.5))  # Landscape letter
-    gs = gridspec.GridSpec(3, 2, width_ratios=[1, 2], wspace=0.4, hspace=0.5)
+    fig = plt.figure(figsize=(11, 8.5), constrained_layout=True)  # Landscape letter, auto-layout
+    gs = gridspec.GridSpec(3, 2, width_ratios=[1, 2], figure=fig)
 
     # Left: Text block
     ax_summary = fig.add_subplot(gs[:, 0])
     ax_summary.axis('off')
     ax_summary.text(0, 1, summary_text, fontsize=10, va='top', family='monospace')
 
-    # Right: Plots inside a bordered box
+    # Optional: Add light gray box around the text block
+    ax_summary.add_patch(Rectangle(
+        (0, 0), 1, 1,
+        transform=ax_summary.transAxes,
+        fill=False,
+        edgecolor='lightgray',
+        linewidth=2
+    ))
+
+    # Right: Plots
     ax1 = fig.add_subplot(gs[0, 1])
     ax2 = fig.add_subplot(gs[1, 1])
     ax3 = fig.add_subplot(gs[2, 1])
@@ -91,40 +104,27 @@ with PdfPages(OUTPUT_PDF) as pdf:
     for ax in [ax1, ax2, ax3]:
         ax.grid(True)
 
+    # Plot 1: Voltage and Current
     ax1.plot(timestamp, voltage, label="Voltage (V)", color='tab:blue')
     ax1.set_ylabel("Voltage (V)", color='tab:blue')
     ax1.tick_params(axis='y', labelcolor='tab:blue')
+
     ax1b = ax1.twinx()
     ax1b.plot(timestamp, current, label="Current (A)", color='tab:red')
     ax1b.set_ylabel("Current (A)", color='tab:red')
     ax1b.tick_params(axis='y', labelcolor='tab:red')
     ax1.set_title("Voltage and Current")
 
+    # Plot 2: Power
     ax2.plot(timestamp, power, color='tab:orange')
     ax2.set_ylabel("Power (W)")
     ax2.set_title("Power")
 
+    # Plot 3: Temperature
     ax3.plot(timestamp, temperature, color='tab:green')
     ax3.set_ylabel("Temperature (C)")
     ax3.set_xlabel("Time (s)")
     ax3.set_title("Temperature")
-
-    # Draw border box around right plots
-    fig.patches.extend([
-        Rectangle(
-            (0.422, 0.05), 0.53, 0.9,  # (x,y), width, height in figure coords
-            fill=False, linewidth=2, edgecolor='black', zorder=10,
-            transform=fig.transFigure, figure=fig
-        )
-    ])
-
-    fig.patches.extend([
-        Rectangle(
-            (0.05, 0.05), 0.9, 0.9,  # (x,y), width, height in figure coords
-            fill=False, linewidth=2, edgecolor='black', zorder=10,
-            transform=fig.transFigure, figure=fig
-        )
-    ])
 
     pdf.savefig(fig)
     plt.close()
