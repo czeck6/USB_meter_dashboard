@@ -1,4 +1,4 @@
-# USB_meter_dashboard
+# USB Meter Dashboard and Report Generator
 FNB58 USB Power Meter Logging Program
 
 # USB Power Meter Data Logger and Report Generator
