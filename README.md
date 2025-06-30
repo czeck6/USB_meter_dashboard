@@ -65,6 +65,7 @@ python 3usb_meter.py
   - Saves all measurements to a timestamped `.csv` file.
 
 - `reporter.py`:
+  - Queries the operator for a new test title to replace the default.
   - Parses the `.csv` file after a test run.
   - Summarizes the start/end/average values of voltage, current, power, temperature, and mAh delivered.
   - Generates a **professional-looking PDF report** with summary text and graphs.
