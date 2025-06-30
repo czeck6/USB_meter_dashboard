@@ -6,6 +6,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
 import numpy as np
 from matplotlib.patches import Rectangle
+import tkinter as tk
+from tkinter.simpledialog import askstring
 
 # --- CONFIG ---
 if len(sys.argv) > 1:
@@ -13,6 +15,11 @@ if len(sys.argv) > 1:
 else:
     print("Usage: python reporter.py [csv_file]")
     sys.exit(1)
+
+# Prompt for title using a simple GUI dialog
+root = tk.Tk()
+root.withdraw()
+TITLE = askstring("Test Title", "Enter a title for the test report:", initialvalue="USB Meter Report") or "USB Meter Report"
 
 OUTPUT_PDF = DATA_FILE.replace('.csv', '_report.pdf')
 AUTHOR = "change_me"
@@ -54,8 +61,12 @@ avg_current = np.mean(current[start_index:])
 avg_power = np.mean(power[start_index:])
 avg_temp = np.mean(temperature[start_index:])
 
-summary_text = f"""
-USB Power Bank Test Report
+max_current = np.max(current[start_index:])
+min_current = np.min(current[start_index:])
+max_power = np.max(power[start_index:])
+min_power = np.min(power[start_index:])
+
+summary_text = f"""{TITLE}
 Prepared by: {AUTHOR}
 Date Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Test Type: {TEST_TYPE}
@@ -75,28 +86,24 @@ Average Voltage: {avg_voltage:.4f} V
 Average Current: {avg_current:.4f} A
 Average Power: {avg_power:.4f} W
 Average Temperature: {avg_temp:.2f} °C
+
+--- Extremes ---
+Min Power: {min_power:.4f} W
+Max Power: {max_power:.4f} W
+Min Current: {min_current:.4f} A
+Max Current: {max_current:.4f} A
 """
 
 # --- Plot and Save ---
 with PdfPages(OUTPUT_PDF) as pdf:
-    fig = plt.figure(figsize=(11, 8.5), constrained_layout=True)  # Landscape letter, auto-layout
+    fig = plt.figure(figsize=(11, 8.5), constrained_layout=True)
     gs = gridspec.GridSpec(3, 2, width_ratios=[1, 2], figure=fig)
 
-    # Left: Text block
     ax_summary = fig.add_subplot(gs[:, 0])
     ax_summary.axis('off')
     ax_summary.text(0, 1, summary_text, fontsize=10, va='top', family='monospace')
+    ax_summary.add_patch(Rectangle((0, 0), 1, 1, transform=ax_summary.transAxes, fill=False, edgecolor='lightgray', linewidth=2))
 
-    # Optional: Add light gray box around the text block
-    ax_summary.add_patch(Rectangle(
-        (0, 0), 1, 1,
-        transform=ax_summary.transAxes,
-        fill=False,
-        edgecolor='lightgray',
-        linewidth=2
-    ))
-
-    # Right: Plots
     ax1 = fig.add_subplot(gs[0, 1])
     ax2 = fig.add_subplot(gs[1, 1])
     ax3 = fig.add_subplot(gs[2, 1])
@@ -104,7 +111,6 @@ with PdfPages(OUTPUT_PDF) as pdf:
     for ax in [ax1, ax2, ax3]:
         ax.grid(True)
 
-    # Plot 1: Voltage and Current
     ax1.plot(timestamp, voltage, label="Voltage (V)", color='tab:blue')
     ax1.set_ylabel("Voltage (V)", color='tab:blue')
     ax1.tick_params(axis='y', labelcolor='tab:blue')
@@ -115,12 +121,10 @@ with PdfPages(OUTPUT_PDF) as pdf:
     ax1b.tick_params(axis='y', labelcolor='tab:red')
     ax1.set_title("Voltage and Current")
 
-    # Plot 2: Power
     ax2.plot(timestamp, power, color='tab:orange')
     ax2.set_ylabel("Power (W)")
     ax2.set_title("Power")
 
-    # Plot 3: Temperature
     ax3.plot(timestamp, temperature, color='tab:green')
     ax3.set_ylabel("Temperature (C)")
     ax3.set_xlabel("Time (s)")
